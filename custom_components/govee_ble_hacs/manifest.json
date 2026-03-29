@@ -4,7 +4,7 @@
   "documentation": "https://github.com/linkian19/hacs-govee_ble",
   "issue_tracker": "https://github.com/linkian19/hacs-govee_ble/issues",
   "dependencies": ["bluetooth"],
-  "version": "2024.3.0",
+  "version": "2026.3.0",
   "config_flow": true,
   "codeowners": ["@linkian19"],
   "requirements": ["bleak>=0.20.0"],

@@ -1,5 +1,5 @@
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 class Attribute(ABC):
@@ -31,3 +31,15 @@ class Battery(Attribute):
     @property
     def battery(self):
         return self._battery
+
+
+@dataclass
+class ProbeTemperatures(Attribute):
+    """Mixin for devices that expose multiple temperature probes (e.g. BBQ thermometers)."""
+
+    _probe_temperatures: list[float | None] = field(default_factory=list)
+
+    @property
+    def probe_temperatures(self) -> list[float | None]:
+        """Return list of probe temperatures. None means probe is not connected."""
+        return self._probe_temperatures

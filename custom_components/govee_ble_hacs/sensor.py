@@ -22,7 +22,7 @@ from homeassistant.helpers.typing import StateType
 from .const import DOMAIN
 from .helpers import get_scanner
 from .scanner import Scanner
-from .scanner.attribute import Attribute, Battery, Hygrometer, Thermometer
+from .scanner.attribute import Attribute, Battery, Hygrometer, ProbeTemperatures, Thermometer
 from .scanner.device import Device
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,7 +72,7 @@ GOVEE_SENSORS: tuple[GoveeBleSensorEntityDescription, ...] = (
 
 
 class GoveeBleSensorEntity(SensorEntity):
-    """Govee Ble sensor entity."""
+    """Govee BLE sensor entity."""
 
     _attr_should_poll = False
     _attr_force_update = False
@@ -113,6 +113,58 @@ class GoveeBleSensorEntity(SensorEntity):
         self.async_schedule_update_ha_state()
 
 
+class GoveeBleProbeEntity(SensorEntity):
+    """Govee BLE BBQ probe temperature sensor entity."""
+
+    _attr_should_poll = False
+    _attr_force_update = False
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, scanner: Scanner, device: Device, probe_index: int) -> None:
+        """Initialize a BBQ probe sensor entity."""
+        self._scanner = scanner
+        self._device = device
+        self._probe_index = probe_index
+
+        probe_number = probe_index + 1
+        self._attr_name = f"{device.name} Probe {probe_number}"
+        self._attr_unique_id = f"{device.address}.probe_{probe_index}"
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, device.address)})
+
+    @property
+    def native_value(self) -> StateType:
+        """Return the temperature for this probe, or None if not connected."""
+        temps = self._device.probe_temperatures
+        if self._probe_index < len(temps):
+            return temps[self._probe_index]
+        return None
+
+    @property
+    def available(self) -> bool:
+        """Mark unavailable when the probe is not physically connected."""
+        temps = self._device.probe_temperatures
+        if self._probe_index < len(temps):
+            return temps[self._probe_index] is not None
+        return False
+
+    async def async_added_to_hass(self) -> None:
+        """Set up a listener for device updates."""
+        self.async_on_remove(
+            self._scanner.on(
+                self._device.address,
+                lambda event: self._update_callback(event["device"]),
+            )
+        )
+
+    @callback
+    def _update_callback(self, device: Device) -> None:
+        """Handle device update."""
+        self._device = device
+        self.async_schedule_update_ha_state()
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -123,17 +175,30 @@ async def async_setup_entry(
 
     @callback
     def async_add_sensor(device: Device) -> None:
-        """Add BLE Sensor."""
+        """Add sensor entities for a newly discovered device."""
         _LOGGER.debug("Adding sensors for %s", device)
-        async_add_entities(
-            [
-                GoveeBleSensorEntity(
-                    scanner=scanner, device=device, entity_description=sensor
-                )
-                for sensor in GOVEE_SENSORS
-                if isinstance(device, sensor.attribute)
-            ]
+        entities: list[SensorEntity] = []
+
+        # Standard attribute-based sensors (address, temp, humidity, battery)
+        entities.extend(
+            GoveeBleSensorEntity(
+                scanner=scanner, device=device, entity_description=sensor
+            )
+            for sensor in GOVEE_SENSORS
+            if isinstance(device, sensor.attribute)
         )
+
+        # BBQ probe temperature sensors — one entity per probe
+        if isinstance(device, ProbeTemperatures):
+            entities.extend(
+                GoveeBleProbeEntity(
+                    scanner=scanner, device=device, probe_index=i
+                )
+                for i in range(len(device.probe_temperatures))
+            )
+
+        if entities:
+            async_add_entities(entities)
 
     entry.async_on_unload(
         async_dispatcher_connect(

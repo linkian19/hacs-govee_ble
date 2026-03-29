@@ -46,7 +46,8 @@ class Device(abc.ABC):
         """Return the model of this device."""
         return self._model
 
-    @abc.abstractstaticmethod
+    @staticmethod
+    @abc.abstractmethod
     def update(self, device: BLEDevice, advertisement: AdvertisementData):
         raise NotImplementedError()
 
@@ -55,7 +56,7 @@ class Device(abc.ABC):
             self._device = device
 
     @abc.abstractmethod
-    def dict():
+    def dict(self):
         raise NotImplementedError()
 
     def __repr__(self):
@@ -194,7 +195,7 @@ def determine_known_device(
     model = get_govee_model(device.name)
     if model in MODEL_MAP:
         return MODEL_MAP[model](device, advertisement)
-    elif model and advertisement.manufacturer_data:
+    elif model and advertisement and advertisement.manufacturer_data:
         _LOGGER.debug(
             "%s appears to be a Govee %s, but no handler has been created. Consider opening an issue at https://github.com/natekspencer/hacs-govee_ble/issues with the advertisement message from above.",
             device.name,

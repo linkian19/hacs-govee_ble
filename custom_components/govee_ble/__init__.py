@@ -1,7 +1,6 @@
 """Govee Thermometer/Humidity BLE HCI monitor sensor integration."""
 from __future__ import annotations
 
-import asyncio
 import logging
 
 from bleak.exc import BleakError
@@ -49,7 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {}
 
     scanner = await get_scanner(hass, entry)
-    dev_reg = await device_registry.async_get_registry(hass)
+    dev_reg = device_registry.async_get(hass)
 
     @callback
     def async_on_device_discovered(device: Device) -> None:
@@ -68,12 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     async def start_platforms() -> None:
         """Start platforms and perform discovery."""
         # wait until all required platforms are ready
-        await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_setup(entry, platform)
-                for platform in PLATFORMS
-            ]
-        )
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
         # listen for new devices being discovered
         scanner.on(
@@ -97,14 +91,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     scanner = await get_scanner(hass, entry)
     await scanner.stop()
 
-    unload_ok = all(
-        await asyncio.gather(
-            *[
-                hass.config_entries.async_forward_entry_unload(entry, platform)
-                for platform in PLATFORMS
-            ]
-        )
-    )
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if not unload_ok:
         return False

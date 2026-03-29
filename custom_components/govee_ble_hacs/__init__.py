@@ -1,13 +1,11 @@
-"""Govee Thermometer/Humidity BLE HCI monitor sensor integration."""
+"""Govee BLE integration — sensors and lights via HA Bluetooth layer."""
 from __future__ import annotations
 
+import asyncio
 import logging
-
-from bleak.exc import BleakError
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.entity import DeviceInfo
@@ -15,11 +13,11 @@ from homeassistant.helpers.entity import DeviceInfo
 from .const import DOMAIN, EVENT_DEVICE_ADDED_TO_REGISTRY
 from .helpers import get_scanner
 from .scanner import DEVICE_DISCOVERED
-from .scanner.device import Device
+from .scanner.device import Device, GoveeLight
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor"]
+PLATFORMS = ["sensor", "light"]
 DATA_START_PLATFORM_TASK = "start_platform_task"
 
 
@@ -38,47 +36,38 @@ def register_device(
         manufacturer="Govee",
     )
 
-    device = dev_reg.async_get_or_create(config_entry_id=entry.entry_id, **params)
+    registered = dev_reg.async_get_or_create(config_entry_id=entry.entry_id, **params)
+    async_dispatcher_send(hass, EVENT_DEVICE_ADDED_TO_REGISTRY, registered)
 
-    async_dispatcher_send(hass, EVENT_DEVICE_ADDED_TO_REGISTRY, device)
 
-
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Set up Govee Thermometer/Humidity BLE from a config entry."""
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up Govee BLE from a config entry."""
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {}
 
-    scanner = await get_scanner(hass, entry)
+    scanner = get_scanner(hass, entry)
     dev_reg = device_registry.async_get(hass)
 
     @callback
     def async_on_device_discovered(device: Device) -> None:
         """Handle device discovered event."""
         _LOGGER.debug("Processing device %s", device)
-
-        # register (or update) device in device registry
         register_device(hass, entry, dev_reg, device)
 
+        platform = "light" if isinstance(device, GoveeLight) else "sensor"
         async_dispatcher_send(
             hass,
-            f"{DOMAIN}_{entry.entry_id}_add_sensor",
+            f"{DOMAIN}_{entry.entry_id}_add_{platform}",
             device,
         )
 
     async def start_platforms() -> None:
-        """Start platforms and perform discovery."""
-        # wait until all required platforms are ready
+        """Start platforms and begin discovery."""
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
-        # listen for new devices being discovered
         scanner.on(
             DEVICE_DISCOVERED, lambda event: async_on_device_discovered(event["device"])
         )
-
-        try:
-            await scanner.start()
-        except BleakError as ex:
-            _LOGGER.debug("Cancelling start platforms")
-            raise ConfigEntryNotReady from ex
+        scanner.start()
 
     platform_task = hass.async_create_task(start_platforms())
     hass.data[DOMAIN][entry.entry_id][DATA_START_PLATFORM_TASK] = platform_task
@@ -86,10 +75,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    scanner = await get_scanner(hass, entry)
-    await scanner.stop()
+    scanner = get_scanner(hass, entry)
+    scanner.stop()
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
@@ -98,8 +87,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     info = hass.data[DOMAIN].pop(entry.entry_id)
 
-    platform_task: asyncio.Task = info[DATA_START_PLATFORM_TASK]
-    platform_task.cancel()
-    await platform_task
+    platform_task: asyncio.Task = info.get(DATA_START_PLATFORM_TASK)
+    if platform_task and not platform_task.done():
+        platform_task.cancel()
+        try:
+            await platform_task
+        except asyncio.CancelledError:
+            pass
 
     return True

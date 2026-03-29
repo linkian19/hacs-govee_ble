@@ -119,7 +119,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee BLE sensors using config entry."""
-    scanner = await get_scanner(hass, entry)
+    scanner = get_scanner(hass, entry)
 
     @callback
     def async_add_sensor(device: Device) -> None:

@@ -185,7 +185,29 @@ class H51TH(ThermoHygrometerEncoded):
     OFFSET = 2
 
 
-VALID_CLASSES: set[Type[Device]] = {H50TH, H507TH, H51TH, H5179}
+class GoveeLight(Device):
+    """Govee BLE Light device (controllable via GATT)."""
+
+    SUPPORTED_MODELS = {
+        "H6181", "H6182", "H6110", "H6117", "H6141", "H6142", "H6148",
+        "H6160", "H6163", "H6195", "H7020", "H7021", "H7022", "H7028",
+        "H7041", "H7042", "H7050", "H7055",
+    }
+
+    def update(self, device: BLEDevice, advertisement: AdvertisementData) -> None:
+        """Update device data from advertisement (lights have no sensor data)."""
+        self.update_device(device)
+
+    def dict(self):
+        """Return pertinent data about this device."""
+        return {
+            "address": self.address,
+            "name": self.name,
+            "model": self.model,
+        }
+
+
+VALID_CLASSES: set[Type[Device]] = {H50TH, H507TH, H51TH, H5179, GoveeLight}
 MODEL_MAP = {model: cls for cls in VALID_CLASSES for model in cls.SUPPORTED_MODELS}
 
 

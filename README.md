@@ -114,13 +114,20 @@ Minimum Home Assistant version: **2022.8** (when the HA Bluetooth layer shipped)
 
 ## Installation
 
-### Via HACS (recommended)
+### Via the Marketplace (recommended)
 
-1. In Home Assistant, go to **HACS** → **Integrations**
-2. Click the vertical ellipsis (⋮) → **Custom repositories**
-3. Enter `https://github.com/linkian19/hacs-govee_ble` and select category **Integration**
-4. Click **ADD**, then install **Govee BLE (HACS)** from the HACS integrations page
-5. Restart Home Assistant
+Home Assistant 2026.11 replaced HACS with the built-in **Marketplace**. This fork is a custom repository:
+
+1. In Home Assistant, open **Settings → Marketplace**
+2. Select **Add from link** and enter `https://github.com/linkian19/hacs-govee_ble`
+3. Select **Install** — setup starts straight away, no restart needed
+4. Updates appear under **Settings → Updates**; after updating, restart Home Assistant when the repair prompts you
+
+The Marketplace asks you to connect a GitHub account (a one-time device sign-in) the first time you add a custom repository.
+
+> On Home Assistant versions before 2026.11, add the same URL under **HACS → ⋮ → Custom repositories** with category **Integration** instead.
+
+The integration keeps its name **Govee BLE (HACS)** and domain `govee_ble_hacs` so existing installs carry over.
 
 ### Manual
 

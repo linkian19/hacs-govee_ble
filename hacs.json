@@ -1,6 +1,4 @@
 {
   "name": "Govee BLE (HACS)",
-  "domains": ["sensor", "light"],
-  "iot_class": "Local Push",
   "homeassistant": "2022.8.0"
 }

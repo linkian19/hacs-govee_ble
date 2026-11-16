@@ -3,7 +3,6 @@ from __future__ import annotations
 import abc
 import logging
 from struct import unpack_from
-from typing import Optional, Type
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
@@ -18,7 +17,7 @@ class Device(abc.ABC):
     SUPPORTED_MODELS: set[str] = None
 
     def __init__(
-        self, device: BLEDevice, advertisement: Optional[AdvertisementData] = None
+        self, device: BLEDevice, advertisement: AdvertisementData | None = None
     ):
         """Initialize a device."""
         self._device = device
@@ -46,7 +45,6 @@ class Device(abc.ABC):
         """Return the model of this device."""
         return self._model
 
-    @staticmethod
     @abc.abstractmethod
     def update(self, device: BLEDevice, advertisement: AdvertisementData):
         raise NotImplementedError()
@@ -320,13 +318,13 @@ class GoveeLight(Device):
         }
 
 
-VALID_CLASSES: set[Type[Device]] = {H50TH, H507TH, H51TH, H5179, H5183, H5184, GoveeLight}
+VALID_CLASSES: set[type[Device]] = {H50TH, H507TH, H51TH, H5179, H5183, H5184, GoveeLight}
 MODEL_MAP = {model: cls for cls in VALID_CLASSES for model in cls.SUPPORTED_MODELS}
 
 
 def determine_known_device(
-    device: BLEDevice, advertisement: Optional[AdvertisementData] = None
-) -> Optional[Device]:
+    device: BLEDevice, advertisement: AdvertisementData | None = None
+) -> Device | None:
     model = get_govee_model(device.name)
     if model in MODEL_MAP:
         return MODEL_MAP[model](device, advertisement)

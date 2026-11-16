@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from functools import reduce
+import logging
 
 from bleak import BleakClient
 from bleak.exc import BleakError
-
 from homeassistant.components.bluetooth import async_ble_device_from_address
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
@@ -136,7 +135,7 @@ async def _query_state(hass: HomeAssistant, address: str) -> dict | None:
             )
             try:
                 await asyncio.wait_for(response_event.wait(), timeout=_QUERY_TIMEOUT)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 _LOGGER.debug("State query timed out for %s", address)
             await client.stop_notify(_GOVEE_NOTIFY_CHAR_UUID)
     except BleakError as ex:

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Optional
 
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
@@ -10,7 +9,7 @@ from bleak.backends.scanner import AdvertisementData
 _LOGGER = logging.getLogger(__name__)
 
 
-def get_govee_model(name: str) -> Optional[str]:
+def get_govee_model(name: str) -> str | None:
     if not name:
         return None
     elif name.startswith(("ihoment_", "Govee_", "Minger_", "GBK_")):

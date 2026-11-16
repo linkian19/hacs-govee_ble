@@ -5,6 +5,8 @@ on:
     branches: ["**"]
   pull_request:
   workflow_dispatch:
+  # Called by release.yml so a release is only published from a passing tag
+  workflow_call:
 
 jobs:
   hassfest:

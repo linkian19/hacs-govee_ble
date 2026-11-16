@@ -58,6 +58,17 @@ pytest -q
 
 `requirements_test.txt` pins one Home Assistant release plus the requirements of HA's `bluetooth` integration, which the tests import. When bumping `pytest-homeassistant-custom-component`, copy the matching pins from `homeassistant/components/{bluetooth,usb}/manifest.json`.
 
+## Releasing
+
+Versions are CalVer (`YYYY.M.patch`) with no `v` prefix.
+
+1. Bump `version` in `custom_components/govee_ble_hacs/manifest.json` and add a `CHANGELOG.md` entry; merge to `main`.
+2. Tag the merge commit with the same version and push the tag: `git tag -a 2026.12.0 -m 2026.12.0 && git push origin 2026.12.0`.
+3. The Release workflow checks the tag matches `manifest.json`, runs the full Validate workflow on the tagged commit, then publishes the GitHub release with a generated Full Changelog link.
+4. Replace the generated body with a short Fixes / Notes summary (kept above the Full Changelog link): `gh release edit <tag> --notes-file notes.md`.
+
+This repo is a fork, so `gh` defaults to the upstream repository. Run `gh repo set-default linkian19/hacs-govee_ble` once in a fresh clone, or pass `-R linkian19/hacs-govee_ble`.
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under its MIT License.

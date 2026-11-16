@@ -1,0 +1,39 @@
+name: Release
+
+# Tags are CalVer without a "v" prefix (e.g. 2026.11.0), matching manifest.json
+on:
+  push:
+    tags:
+      - "20[0-9][0-9].*"
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Tag matches manifest.json version
+        run: |
+          MANIFEST="$(jq -r .version custom_components/govee_ble_hacs/manifest.json)"
+          if [ "$MANIFEST" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match manifest.json version $MANIFEST"
+            exit 1
+          fi
+
+  # Same checks as every push: ruff, hassfest, HACS validation, pytest
+  validate:
+    needs: version
+    uses: ./.github/workflows/validate.yml
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # HACS installs the integration from the tagged source; the release body
+      # gets the generated Full Changelog link and the Fixes / Notes summary
+      # is added afterwards with `gh release edit`
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true

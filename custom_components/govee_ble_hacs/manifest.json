@@ -10,5 +10,5 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/linkian19/hacs-govee_ble/issues",
   "requirements": ["bleak>=0.20.0"],
-  "version": "2026.3.1"
+  "version": "2026.11.0"
 }

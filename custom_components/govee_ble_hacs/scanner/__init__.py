@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 import logging
-from typing import Callable, Dict, List
 
 from homeassistant.components.bluetooth import (
     BluetoothChange,
@@ -23,7 +23,7 @@ class Scanner:
     def __init__(self, hass: HomeAssistant) -> None:
         """Initialize the scanner."""
         self._hass = hass
-        self._listeners: Dict[str, List[Callable]] = {}
+        self._listeners: dict[str, list[Callable]] = {}
         self._known_devices: dict[str, Device] = {}
         self._unsubscribe: Callable | None = None
 

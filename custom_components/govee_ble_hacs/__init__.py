@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 
 from homeassistant.config_entries import ConfigEntry
@@ -90,9 +91,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     platform_task: asyncio.Task = info.get(DATA_START_PLATFORM_TASK)
     if platform_task and not platform_task.done():
         platform_task.cancel()
-        try:
+        with contextlib.suppress(asyncio.CancelledError):
             await platform_task
-        except asyncio.CancelledError:
-            pass
 
     return True

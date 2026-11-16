@@ -108,7 +108,7 @@ This integration uses **Home Assistant's native Bluetooth integration layer** â€
 - Passive scanning (advertisement sniffing) works through proxies for sensor devices
 - Active connections (GATT commands for lights) route through connectable proxies
 
-Minimum Home Assistant version: **2022.8** (when the HA Bluetooth layer shipped).
+Minimum Home Assistant version: **2022.11** (the HA Bluetooth layer shipped in 2022.8; `UnitOfTemperature` and kelvin-based color temperature for lights arrived in 2022.11).
 
 ---
 

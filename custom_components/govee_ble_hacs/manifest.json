@@ -1,12 +1,14 @@
 {
   "domain": "govee_ble_hacs",
   "name": "Govee BLE (HACS)",
-  "documentation": "https://github.com/linkian19/hacs-govee_ble",
-  "issue_tracker": "https://github.com/linkian19/hacs-govee_ble/issues",
-  "dependencies": ["bluetooth"],
-  "version": "2026.3.1",
-  "config_flow": true,
+  "bluetooth": [],
   "codeowners": ["@linkian19"],
+  "config_flow": true,
+  "dependencies": ["bluetooth"],
+  "documentation": "https://github.com/linkian19/hacs-govee_ble",
+  "integration_type": "hub",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/linkian19/hacs-govee_ble/issues",
   "requirements": ["bleak>=0.20.0"],
-  "bluetooth": []
+  "version": "2026.3.1"
 }
